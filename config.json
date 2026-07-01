@@ -1,0 +1,45 @@
+{
+  "keywords": [
+    "Data Engineer",
+    "AI Engineer",
+    "Python Developer"
+  ],
+  "locations": [
+    "New Jersey, United States",
+    "New York, United States",
+    "Remote",
+    "Virginia, United States",
+    "California, United States",
+    "Seattle, Washington, United States",
+    "Texas, United States"
+  ],
+  "companies": [
+    "Microsoft",
+    "Google",
+    "Meta",
+    "Apple",
+    "Databricks",
+    "Snowflake",
+    "Salesforce",
+    "ServiceNow",
+    "OpenAI",
+    "Anthropic",
+    "JPMorgan Chase",
+    "Uber",
+    "Airbnb",
+    "Netflix",
+    "Spotify",
+    "Shopify",
+    "MongoDB",
+    "Mistral",
+    "Perplexity",
+    "Cohere"
+  ],
+  "experienceLevels": [
+    "entry_level",
+    "associate",
+    "senior"
+  ],
+  "postedWithin": "24h",
+  "outputDir": "./output"
+}

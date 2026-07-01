@@ -1,0 +1,8 @@
+.env
+node_modules/
+output/
+*.csv
+*.json
+!package.json
+!config.json
+auth_state.json

@@ -1,0 +1,17 @@
+{
+  "name": "linkedin-scrapper",
+  "version": "1.0.0",
+  "description": "LinkedIn job scraper using Playwright",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "scrape": "node src/scraper.js",
+    "test": "node src/scraper.js --dry-run"
+  },
+  "dependencies": {
+    "playwright": "^1.44.0",
+    "dotenv": "^16.4.5",
+    "csv-writer": "^1.6.0",
+    "node-cron": "^3.0.3"
+  }
+}

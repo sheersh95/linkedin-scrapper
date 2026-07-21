@@ -7,7 +7,7 @@ const AUTH_STATE_PATH = path.join(__dirname, '..', 'auth_state.json');
 async function login(email, password, headless = true) {
   const browser = await chromium.launch({
     headless,
-    executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',

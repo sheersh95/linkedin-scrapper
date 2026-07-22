@@ -144,7 +144,8 @@ async function run() {
   console.log(`Companies: ${config.companies.join(', ')}`);
   console.log(`Posted within: ${config.postedWithin}`);
 
-  const { browser, page } = await login(email, password);
+  const headless = process.env.HEADLESS !== 'false';
+  const { browser, page } = await login(email, password, headless);
 
   const allJobs = [];
   const seen = new Set();

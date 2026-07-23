@@ -47,8 +47,15 @@ async function login(email, password, headless = true) {
     await humanDelay(1000, 1500);
   }
 
+  // Log all buttons/links so we can identify the right selector
+  const allButtons = await page.evaluate(() => {
+    const els = [...document.querySelectorAll('button, a')];
+    return els.map(el => el.innerText?.trim()).filter(t => t && t.length < 80);
+  });
+  console.log('Buttons/links found on page:', allButtons);
+
   // Click "Sign in with email" if Google/Apple buttons are shown
-  const signInWithEmail = page.locator('button:has-text("Sign in with email"), a:has-text("Sign in with email"), button:has-text("Use email"), [data-tracking-control-name="login_email"]');
+  const signInWithEmail = page.locator('button:has-text("Sign in with email"), a:has-text("Sign in with email"), button:has-text("Use email"), button:has-text("email"), a:has-text("email")');
   if (await signInWithEmail.first().isVisible({ timeout: 4000 }).catch(() => false)) {
     console.log('Clicking "Sign in with email"...');
     await signInWithEmail.first().click();

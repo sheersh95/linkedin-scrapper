@@ -37,7 +37,7 @@ async function login(email, password, headless = true) {
   }
 
   console.log('Logging in to LinkedIn...');
-  await page.goto('https://www.linkedin.com/login', { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.goto('https://www.linkedin.com/uas/login', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await humanDelay(2000, 3000);
 
   // Dismiss cookie banner if present

@@ -46,25 +46,59 @@ async function scrapeJobsForSearch(page, keyword, location) {
 
   const jobs = await page.evaluate((targetCompanies) => {
     const results = [];
-    const cards = document.querySelectorAll('.job-card-container, .jobs-search-results__list-item, [data-job-id]');
+
+    // Try multiple card container selectors for LinkedIn's current UI
+    const cards = document.querySelectorAll([
+      'li[data-occludable-job-id]',
+      'li[data-job-id]',
+      '.job-card-container',
+      '.jobs-search-results__list-item',
+      '.scaffold-layout__list-item',
+    ].join(', '));
 
     cards.forEach((card) => {
       try {
-        const titleEl = card.querySelector('.job-card-list__title, .job-card-container__link, [aria-label]');
-        const companyEl = card.querySelector('.job-card-container__primary-description, .job-card-container__company-name, .artdeco-entity-lockup__subtitle');
-        const locationEl = card.querySelector('.job-card-container__metadata-item, .job-card-container__bullet');
+        // Link containing job ID
         const linkEl = card.querySelector('a[href*="/jobs/view/"]');
-        const timeEl = card.querySelector('time, .job-card-container__listed-status');
-        const jobIdAttr = card.getAttribute('data-job-id') || card.getAttribute('data-occludable-job-id');
+        const link = linkEl?.href?.split('?')[0];
+        const jobId = link?.match(/\/jobs\/view\/(\d+)/)?.[1]
+          || card.getAttribute('data-occludable-job-id')
+          || card.getAttribute('data-job-id');
 
-        const title = titleEl?.innerText?.trim() || titleEl?.getAttribute('aria-label')?.trim();
+        // Title: try multiple selectors
+        const titleEl = card.querySelector([
+          '.job-card-list__title--link',
+          '.job-card-container__link',
+          'a[data-control-id]',
+          '.job-card-list__title',
+          'strong',
+        ].join(', '));
+        const title = titleEl?.innerText?.trim() || linkEl?.innerText?.trim();
+
+        // Company: grab all text spans, pick the one that's not the title/location
+        const companyEl = card.querySelector([
+          '.artdeco-entity-lockup__subtitle span',
+          '.job-card-container__primary-description',
+          '.job-card-container__company-name',
+          '.job-card-list__entity-lockup .artdeco-entity-lockup__subtitle',
+          '.topcard__org-name-link',
+        ].join(', '));
         const company = companyEl?.innerText?.trim();
-        const location = locationEl?.innerText?.trim();
-        const link = linkEl?.href;
-        const postedAt = timeEl?.getAttribute('datetime') || timeEl?.innerText?.trim();
-        const jobId = jobIdAttr || (link ? link.match(/\/jobs\/view\/(\d+)/)?.[1] : null);
 
-        if (!title || !company) return;
+        // Location
+        const locationEl = card.querySelector([
+          '.job-card-container__metadata-item',
+          '.artdeco-entity-lockup__caption li',
+          '.job-card-container__bullet',
+          '.job-card-list__footer-wrapper li',
+        ].join(', '));
+        const location = locationEl?.innerText?.trim();
+
+        // Posted time
+        const timeEl = card.querySelector('time');
+        const postedAt = timeEl?.getAttribute('datetime') || timeEl?.innerText?.trim();
+
+        if (!title || !company || !jobId) return;
 
         // Filter by target companies (case-insensitive partial match)
         const companyLower = company.toLowerCase();
@@ -154,7 +188,13 @@ async function run() {
     for (const keyword of config.keywords) {
       for (const location of config.locations) {
         const jobs = await scrapeJobsForSearch(page, keyword, location);
-        console.log(`  Found ${jobs.length} matching jobs`);
+        // Debug: show all raw cards before company filter
+  const rawCards = await page.evaluate(() => {
+    const cards = document.querySelectorAll('li[data-occludable-job-id], li[data-job-id], .job-card-container, .jobs-search-results__list-item, .scaffold-layout__list-item');
+    return [...cards].slice(0, 3).map(c => c.innerText?.trim()?.slice(0, 200));
+  });
+  console.log(`  Raw cards sample (first 3):`, rawCards);
+  console.log(`  Found ${jobs.length} matching jobs after company filter`);
 
         for (const job of jobs) {
           const key = job.jobId || `${job.title}|${job.company}|${job.link}`;

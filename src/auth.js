@@ -65,7 +65,8 @@ async function login(email, password, headless = true) {
 
   await humanDelay(600, 1200);
   // Click the visible Sign in submit button
-  const submitBtn = page.locator('button:visible:has-text("Sign in"), button[type="submit"]:visible').first();
+  // Use exact text match to avoid clicking "Sign in with Apple"
+  const submitBtn = page.locator('button:visible').filter({ hasText: /^Sign in$/ }).first();
   await submitBtn.waitFor({ state: 'visible', timeout: 10000 });
   await submitBtn.click();
 

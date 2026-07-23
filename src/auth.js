@@ -47,9 +47,13 @@ async function login(email, password, headless = true) {
     await humanDelay(1000, 1500);
   }
 
-  // Take a debug screenshot so we can see what LinkedIn is showing
-  await page.screenshot({ path: 'debug_login_page.png', fullPage: true });
-  console.log('Screenshot saved to debug_login_page.png — check it to see what LinkedIn is showing.');
+  // Click "Sign in with email" if Google/Apple buttons are shown
+  const signInWithEmail = page.locator('button:has-text("Sign in with email"), a:has-text("Sign in with email"), button:has-text("Use email"), [data-tracking-control-name="login_email"]');
+  if (await signInWithEmail.first().isVisible({ timeout: 4000 }).catch(() => false)) {
+    console.log('Clicking "Sign in with email"...');
+    await signInWithEmail.first().click();
+    await humanDelay(1500, 2500);
+  }
 
   // Try multiple possible selectors for the email field
   const emailSelectors = ['#username', 'input[name="session_key"]', 'input[type="email"]', 'input[autocomplete="username"]'];

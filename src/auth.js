@@ -47,32 +47,19 @@ async function login(email, password, headless = true) {
     await humanDelay(1000, 1500);
   }
 
-  // Dump all inputs so we can see what's actually on the page
-  const inputs = await page.evaluate(() =>
-    [...document.querySelectorAll('input')].map(i => ({
-      name: i.name, id: i.id, type: i.type, placeholder: i.placeholder, visible: i.offsetParent !== null
-    }))
-  );
-  console.log('Inputs on page:', JSON.stringify(inputs, null, 2));
-  await page.screenshot({ path: 'debug_login.png', fullPage: true });
-
-  // Wait for the email field to be in the DOM (may be off-screen)
-  // LinkedIn uses name="session_key" for email and name="session_password" for password
-  const emailField = page.locator('input[name="session_key"]').first();
-  await emailField.waitFor({ state: 'attached', timeout: 15000 });
-  await emailField.scrollIntoViewIfNeeded();
-  await humanDelay(500, 800);
+  // LinkedIn's new React login page uses dynamic IDs — target by type + visibility
+  const emailField = page.locator('input[type="email"]:visible').first();
+  await emailField.waitFor({ state: 'visible', timeout: 15000 });
 
   console.log('Filling in credentials...');
-  await emailField.click({ force: true });
+  await emailField.click();
   await humanDelay(200, 400);
   await emailField.fill(email);
 
   await humanDelay(400, 800);
 
-  const passwordField = page.locator('input[name="session_password"]').first();
-  await passwordField.scrollIntoViewIfNeeded();
-  await passwordField.click({ force: true });
+  const passwordField = page.locator('input[type="password"]:visible').first();
+  await passwordField.click();
   await humanDelay(200, 400);
   await passwordField.fill(password);
 

@@ -41,25 +41,43 @@ async function login(email, password, headless = true) {
   await humanDelay(2000, 3000);
 
   // Dismiss cookie banner if present
-  const cookieBtn = page.locator('button[action-type="ACCEPT"], #artdeco-global-alert-action__button, button:has-text("Accept")');
-  if (await cookieBtn.first().isVisible({ timeout: 3000 }).catch(() => false)) {
+  const cookieBtn = page.locator('button[action-type="ACCEPT"], #artdeco-global-alert-action__button, button:has-text("Accept"), button:has-text("Reject")');
+  if (await cookieBtn.first().isVisible({ timeout: 5000 }).catch(() => false)) {
     await cookieBtn.first().click();
-    await humanDelay(500, 1000);
+    await humanDelay(1000, 1500);
   }
 
-  // Wait for login form
-  await page.waitForSelector('#username', { timeout: 30000 });
+  // Take a debug screenshot so we can see what LinkedIn is showing
+  await page.screenshot({ path: 'debug_login_page.png', fullPage: true });
+  console.log('Screenshot saved to debug_login_page.png — check it to see what LinkedIn is showing.');
+
+  // Try multiple possible selectors for the email field
+  const emailSelectors = ['#username', 'input[name="session_key"]', 'input[type="email"]', 'input[autocomplete="username"]'];
+  let emailField = null;
+  for (const sel of emailSelectors) {
+    const el = page.locator(sel).first();
+    if (await el.isVisible({ timeout: 3000 }).catch(() => false)) {
+      emailField = el;
+      console.log(`Found email field with selector: ${sel}`);
+      break;
+    }
+  }
+  if (!emailField) {
+    await page.screenshot({ path: 'debug_no_form.png', fullPage: true });
+    throw new Error('Could not find email input on login page. Check debug_login_page.png and debug_no_form.png');
+  }
 
   // Type like a human
-  await page.click('#username');
+  await emailField.click();
   await humanDelay(200, 400);
-  await page.type('#username', email, { delay: 60 });
+  await emailField.type(email, { delay: 60 });
 
   await humanDelay(400, 800);
 
-  await page.click('#password');
+  const passwordField = page.locator('#password, input[name="session_password"], input[type="password"]').first();
+  await passwordField.click();
   await humanDelay(200, 400);
-  await page.type('#password', password, { delay: 60 });
+  await passwordField.type(password, { delay: 60 });
 
   await humanDelay(600, 1200);
   await page.click('[type="submit"]');

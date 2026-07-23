@@ -64,7 +64,10 @@ async function login(email, password, headless = true) {
   await passwordField.fill(password);
 
   await humanDelay(600, 1200);
-  await page.locator('button[type="submit"], [data-litms-control-urn="login-submit"]').first().click();
+  // Click the visible Sign in submit button
+  const submitBtn = page.locator('button:visible:has-text("Sign in"), button[type="submit"]:visible').first();
+  await submitBtn.waitFor({ state: 'visible', timeout: 10000 });
+  await submitBtn.click();
 
   // Wait for navigation after login
   await page.waitForURL(/linkedin\.com\/(feed|checkpoint|challenge)/, { timeout: 60000 }).catch(() => {});

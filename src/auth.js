@@ -29,14 +29,16 @@ async function login(email, password, headless = true) {
   const page = await context.newPage();
 
   // Check if already logged in
-  await page.goto('https://www.linkedin.com/feed/', { waitUntil: 'networkidle', timeout: 30000 });
+  await page.goto('https://www.linkedin.com/feed/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await humanDelay(2000, 3000);
   if (page.url().includes('/feed')) {
     console.log('Already logged in via saved session.');
     return { browser, context, page };
   }
 
   console.log('Logging in to LinkedIn...');
-  await page.goto('https://www.linkedin.com/login', { waitUntil: 'networkidle', timeout: 30000 });
+  await page.goto('https://www.linkedin.com/login', { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await humanDelay(2000, 3000);
 
   // Dismiss cookie banner if present
   const cookieBtn = page.locator('button[action-type="ACCEPT"], #artdeco-global-alert-action__button, button:has-text("Accept")');
@@ -63,7 +65,7 @@ async function login(email, password, headless = true) {
   await page.click('[type="submit"]');
 
   // Wait for navigation after login
-  await page.waitForURL(/linkedin\.com\/(feed|checkpoint|challenge)/, { timeout: 30000 }).catch(() => {});
+  await page.waitForURL(/linkedin\.com\/(feed|checkpoint|challenge)/, { timeout: 60000 }).catch(() => {});
 
   const currentUrl = page.url();
   if (currentUrl.includes('checkpoint') || currentUrl.includes('challenge')) {

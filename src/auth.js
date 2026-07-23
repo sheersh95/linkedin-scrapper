@@ -13,7 +13,7 @@ async function login(email, password, headless = true) {
       '--disable-setuid-sandbox',
       '--disable-blink-features=AutomationControlled',
       '--disable-infobars',
-      '--window-size=1920,1080',
+      '--window-size=1440,900',
     ],
   });
 
@@ -42,76 +42,50 @@ async function login(email, password, headless = true) {
 
   // Dismiss cookie banner if present
   const cookieBtn = page.locator('button[action-type="ACCEPT"], #artdeco-global-alert-action__button, button:has-text("Accept"), button:has-text("Reject")');
-  if (await cookieBtn.first().isVisible({ timeout: 5000 }).catch(() => false)) {
+  if (await cookieBtn.first().isVisible({ timeout: 3000 }).catch(() => false)) {
     await cookieBtn.first().click();
     await humanDelay(1000, 1500);
   }
 
-  // Log all buttons/links so we can identify the right selector
-  const allButtons = await page.evaluate(() => {
-    const els = [...document.querySelectorAll('button, a')];
-    return els.map(el => el.innerText?.trim()).filter(t => t && t.length < 80);
-  });
-  console.log('Buttons/links found on page:', allButtons);
+  // Wait for the email field to be in the DOM (may be off-screen)
+  // LinkedIn uses name="session_key" for email and name="session_password" for password
+  const emailField = page.locator('input[name="session_key"]').first();
+  await emailField.waitFor({ state: 'attached', timeout: 15000 });
+  await emailField.scrollIntoViewIfNeeded();
+  await humanDelay(500, 800);
 
-  // Click "Sign in with email" if Google/Apple buttons are shown
-  const signInWithEmail = page.locator('button:has-text("Sign in with email"), a:has-text("Sign in with email"), button:has-text("Use email"), button:has-text("email"), a:has-text("email")');
-  if (await signInWithEmail.first().isVisible({ timeout: 4000 }).catch(() => false)) {
-    console.log('Clicking "Sign in with email"...');
-    await signInWithEmail.first().click();
-    await humanDelay(1500, 2500);
-  }
-
-  // Try multiple possible selectors for the email field
-  const emailSelectors = ['#username', 'input[name="session_key"]', 'input[type="email"]', 'input[autocomplete="username"]'];
-  let emailField = null;
-  for (const sel of emailSelectors) {
-    const el = page.locator(sel).first();
-    if (await el.isVisible({ timeout: 3000 }).catch(() => false)) {
-      emailField = el;
-      console.log(`Found email field with selector: ${sel}`);
-      break;
-    }
-  }
-  if (!emailField) {
-    await page.screenshot({ path: 'debug_no_form.png', fullPage: true });
-    throw new Error('Could not find email input on login page. Check debug_login_page.png and debug_no_form.png');
-  }
-
-  // Type like a human
-  await emailField.click();
+  console.log('Filling in credentials...');
+  await emailField.click({ force: true });
   await humanDelay(200, 400);
-  await emailField.type(email, { delay: 60 });
+  await emailField.fill(email);
 
   await humanDelay(400, 800);
 
-  const passwordField = page.locator('#password, input[name="session_password"], input[type="password"]').first();
-  await passwordField.click();
+  const passwordField = page.locator('input[name="session_password"]').first();
+  await passwordField.scrollIntoViewIfNeeded();
+  await passwordField.click({ force: true });
   await humanDelay(200, 400);
-  await passwordField.type(password, { delay: 60 });
+  await passwordField.fill(password);
 
   await humanDelay(600, 1200);
-  await page.click('[type="submit"]');
+  await page.locator('button[type="submit"], [data-litms-control-urn="login-submit"]').first().click();
 
   // Wait for navigation after login
   await page.waitForURL(/linkedin\.com\/(feed|checkpoint|challenge)/, { timeout: 60000 }).catch(() => {});
 
   const currentUrl = page.url();
   if (currentUrl.includes('checkpoint') || currentUrl.includes('challenge')) {
-    console.error('\n⚠️  LinkedIn requires security verification (CAPTCHA or email code).');
-    console.error('Run with headless=false to complete it manually:');
-    console.error('  HEADLESS=false node src/scraper.js\n');
-    await browser.close();
-    process.exit(1);
+    console.log('\n⚠️  LinkedIn requires security verification.');
+    console.log('Complete it in the browser window, then press Enter here to continue...');
+    await new Promise((r) => process.stdin.once('data', r));
+    await context.storageState({ path: AUTH_STATE_PATH });
+    return { browser, context, page };
   }
 
   if (!currentUrl.includes('/feed')) {
-    const html = await page.content();
-    console.error('Login page HTML snippet:', html.slice(0, 500));
     throw new Error(`Login failed. Current URL: ${currentUrl}`);
   }
 
-  // Save session state for future runs
   await context.storageState({ path: AUTH_STATE_PATH });
   console.log('Login successful. Session saved to auth_state.json');
 

@@ -47,8 +47,13 @@ async function scrapeCompanyJobs(page, companyName, slug, keyword) {
   const url = buildCompanyJobsUrl(slug, keyword);
   console.log(`  [${companyName}] "${keyword}" → ${url}`);
 
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await humanDelay(2000, 3500);
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
+  } catch {
+    console.warn(`  Timeout loading ${url}, skipping`);
+    return [];
+  }
+  await humanDelay(800, 1200);
   await autoScroll(page);
 
   const jobs = await page.evaluate((company) => {
@@ -93,12 +98,12 @@ async function scrapeCompanyJobs(page, companyName, slug, keyword) {
 async function autoScroll(page) {
   await page.evaluate(async () => {
     const container = document.querySelector('.jobs-search-results-list, .scaffold-layout__list') || document.body;
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 3; i++) {
       container.scrollBy(0, 800);
-      await new Promise((r) => setTimeout(r, 600));
+      await new Promise((r) => setTimeout(r, 300));
     }
   });
-  await humanDelay(1000, 2000);
+  await humanDelay(500, 800);
 }
 
 async function run() {
@@ -145,7 +150,7 @@ async function run() {
           allJobs.push(job);
         }
 
-        await humanDelay(1500, 3000);
+        await humanDelay(800, 1500);
       }
     }
   } finally {
